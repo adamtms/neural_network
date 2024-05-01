@@ -6,6 +6,7 @@ pub trait Layer {
     fn backwards(&mut self, output_error: &Matrix, learning_rate: f64) -> Matrix;
     fn initialize(&mut self, input_size: usize) {}
     fn get_last_input(&self) -> &Matrix;
+    fn get_size(&self) -> usize;
 }
 
 impl Layer for Box<dyn Layer> {
@@ -20,6 +21,9 @@ impl Layer for Box<dyn Layer> {
     }
     fn get_last_input(&self) -> &Matrix {
         self.as_ref().get_last_input()
+    }
+    fn get_size(&self) -> usize {
+        self.as_ref().get_size()
     }
 }
 
@@ -58,20 +62,27 @@ impl Layer for DenseLayer {
     fn get_last_input(&self) -> &Matrix {
         &self.last_input
     }
+    fn get_size(&self) -> usize {
+        self.size
+    }
 }
 
 pub struct ActivationLayer {
     activation_function: Box<dyn ActivationFunction>,
-    last_input: Matrix
+    last_input: Matrix,
+    size: usize
 }
 
 impl ActivationLayer {
     pub fn new(activation_function: Box<dyn ActivationFunction>) -> ActivationLayer {
-        ActivationLayer {activation_function, last_input: Matrix::new(0, 0)}
+        ActivationLayer {activation_function, last_input: Matrix::new(0, 0), size: 0}
     }
 }
 
 impl Layer for ActivationLayer {
+    fn initialize(&mut self, input_size: usize) {
+        self.size = input_size;
+    }
     fn forward(&mut self, inputs: &Matrix) -> Matrix {
         self.last_input = inputs.clone();
         self.activation_function.as_ref().forward(inputs)
@@ -81,5 +92,8 @@ impl Layer for ActivationLayer {
     }
     fn get_last_input(&self) -> &Matrix {
         &self.last_input
+    }
+    fn get_size(&self) -> usize {
+        self.size
     }
 }

@@ -24,6 +24,7 @@ impl NN{
     }
     pub fn add(&mut self, mut layer: Box<dyn Layer>){
         layer.as_mut().initialize(*self.layer_sizes.last().unwrap());
+        self.layer_sizes.push(layer.get_size());
         self.layers.push(layer);
     }
     pub fn predict(&mut self, inputs: &Matrix) -> Matrix {
