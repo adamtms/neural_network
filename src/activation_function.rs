@@ -1,5 +1,5 @@
 pub trait ActivationFunction {
-    fn activate(&self, input: &Vec<f64>) -> Vec<f64>{
+    fn forward(&self, input: &Vec<f64>) -> Vec<f64>{
         input.iter().map(|x| self.function(*x)).collect()
     }
     fn function(&self, x: f64) -> f64;
