@@ -1,10 +1,20 @@
 use crate::layer::Layer;
-use crate::activation_function::ActivationFunction;
+use crate::matrix::Matrix;
 
 pub struct NN{
     layers: Vec<Box<dyn Layer>>,
     learning_rate: f64,
     layer_sizes: Vec<usize>
+}
+
+fn mse(y_true: &Matrix, y_pred: &Matrix) -> f64 {
+    let y_true = y_true.get_data();
+    let y_pred = y_pred.get_data();
+    y_true.iter().zip(y_pred.iter()).map(|(t, p)| (t-p).powi(2)).sum()
+}
+
+fn mse_derivative(y_true: &mut Matrix, y_pred: &Matrix, size: f64) -> Matrix {
+    y_true.sub_matrix(y_pred).unwrap().mul_scalar(-2.0 / size).clone()
 }
 
 impl NN{
@@ -16,7 +26,7 @@ impl NN{
         layer.as_mut().initialize(*self.layer_sizes.last().unwrap());
         self.layers.push(layer);
     }
-    pub fn predict(&mut self, inputs: &Vec<f64>) -> Vec<f64> {
+    pub fn predict(&mut self, inputs: &Matrix) -> Matrix {
         let mut outputs = inputs.clone();
         for layer in self.layers.iter_mut() {
             outputs = layer.forward(&outputs);
@@ -29,24 +39,28 @@ impl NN{
         }
         let mut errors = Vec::new();
         let input_size: f64 = f64::try_from(i32::try_from(y_train[0].len()).unwrap()).unwrap();
-        for _ in 0..epochs {
-            let mut error = 0.0;
+        for epoch in 0..epochs {
+            let mut err = 0.0;
             for i in 0..x_train.len() {
-                let mut outputs = x_train[i].clone();
+                let mut outputs = Matrix::from_vec(x_train[i].clone(), 1, x_train[i].len());
                 for layer in self.layers.iter_mut() {
                     outputs = layer.forward(&outputs);
                 }
-                let row_error: f64 = y_train[i].iter().zip(outputs.iter()).map(|(y, o)| (y - o).powi(2)).sum();
-                error += row_error;
+                let mut y_true = Matrix::from_vec(y_train[i].clone(), 1, y_train[i].len());
+                err += mse(&outputs, &y_true);
 
-                let mut back_error = y_train[i].iter().zip(outputs.iter()).map(|(y, o)| 2.0 * (y - o) / input_size).collect();
+                let mut error = mse_derivative(&mut y_true, &outputs, input_size);
                 for layer in self.layers.iter_mut().rev() {
-                    back_error = layer.backwards(&back_error, self.learning_rate);
+                    error = layer.backwards(&error, self.learning_rate);
                 }
+
             }
-            error = error / f64::try_from(i32::try_from(x_train.len()).unwrap()).unwrap();
-            errors.push(error);
-            println!("{:?}", error);
+            err = err / f64::try_from(i32::try_from(x_train.len()).unwrap()).unwrap();
+            errors.push(err);
+            if epochs % 100 == 0 {
+                println!("{:?} Error: {:?}", epoch, err);
+            }
+
         }
         Ok(errors)
     }

@@ -1,6 +1,21 @@
+use crate::matrix::Matrix;
+
 pub trait ActivationFunction {
-    fn forward(&self, input: &Vec<f64>) -> Vec<f64>{
-        input.iter().map(|x| self.function(*x)).collect()
+    fn forward(&self, input: &Matrix) -> Matrix{
+        let mut output = input.clone();
+        let output_data = output.get_data_mut();
+        for i in 0..output_data.len() {
+            output_data[i] = self.function(output_data[i]);
+        }
+        output
+    }
+    fn backwards(&self, input: &Matrix) -> Matrix{
+        let mut output = input.clone();
+        let output_data = output.get_data_mut();
+        for i in 0..output_data.len() {
+            output_data[i] = self.derivative(output_data[i]);
+        }
+        output
     }
     fn function(&self, x: f64) -> f64;
     fn derivative(&self, x: f64) -> f64;

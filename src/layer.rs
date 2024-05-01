@@ -1,107 +1,85 @@
-use rand::Rng;
+use crate::matrix::Matrix;
 use crate::activation_function::ActivationFunction;
 
 pub trait Layer {
-    fn forward(&mut self, inputs: &Vec<f64>) -> Vec<f64>;
-    fn backwards(&mut self, output_error: &Vec<f64>, learning_rate: f64) -> Vec<f64>;
+    fn forward(&mut self, inputs: &Matrix) -> Matrix;
+    fn backwards(&mut self, output_error: &Matrix, learning_rate: f64) -> Matrix;
     fn initialize(&mut self, input_size: usize) {}
-    fn get_last_input(&self) -> &Vec<f64>;
+    fn get_last_input(&self) -> &Matrix;
 }
 
 impl Layer for Box<dyn Layer> {
-    fn forward(&mut self, inputs: &Vec<f64>) -> Vec<f64> {
+    fn forward(&mut self, inputs: &Matrix) -> Matrix {
         self.as_mut().forward(inputs)
     }
     fn initialize(&mut self, input_size: usize) {
         self.as_mut().initialize(input_size)
     }
-    fn backwards(&mut self, output_error: &Vec<f64>, learning_rate: f64) -> Vec<f64> {
+    fn backwards(&mut self, output_error: &Matrix, learning_rate: f64) -> Matrix {
         self.as_mut().backwards(output_error, learning_rate)
     }
-    fn get_last_input(&self) -> &Vec<f64> {
+    fn get_last_input(&self) -> &Matrix {
         self.as_ref().get_last_input()
-    }
-}
-
-
-struct Node {
-    weights: Vec<f64>,
-    bias: f64
-}
-
-impl Node {
-    fn new(num_weights: usize) -> Node {
-        let mut rng = rand::thread_rng();
-        Node {weights: (0..num_weights).map(|_| rng.gen::<f64>() * 2.0 - 1.0).collect(),
-              bias: rng.gen::<f64>() * 2.0 - 1.0}
-    }
-    fn forward(&self, inputs: &Vec<f64>) -> f64 {
-        inputs.iter().zip(self.weights.iter()).map(|(x, y)| x * y + self.bias).sum()
     }
 }
 
 pub struct DenseLayer {
     size: usize,
     input_size: usize,
-    nodes: Vec<Node>,
-    last_input: Vec<f64>
+    weights: Matrix,
+    biases: Matrix,
+    last_input: Matrix
 }
 
 impl DenseLayer {
     pub fn new(size: usize) -> DenseLayer {
-        DenseLayer {size, input_size: 0, nodes: Vec::new(), last_input: Vec::new()}
+        let matrix = Matrix::new(0, 0);
+        DenseLayer {size, input_size: 0, weights: matrix.clone(), biases: matrix.clone(), last_input: matrix}
     }
 }
 
 impl Layer for DenseLayer {
-    fn forward(&mut self, inputs: &Vec<f64>) -> Vec<f64> {
-        self.last_input = inputs.clone();
-        self.nodes.iter().map(|node| node.forward(inputs)).collect()
-    }
     fn initialize(&mut self, input_size: usize) {
         self.input_size = input_size;
-        self.nodes = (0..self.size).map(|_| Node::new(input_size)).collect();
+        self.weights = Matrix::new_random(self.input_size, self.size);
+        self.biases = Matrix::new_random(1, self.size);
     }
-    fn backwards(&mut self, output_error: &Vec<f64>, learning_rate: f64) -> Vec<f64> {
-        let mut input_error = Vec::new();
-        for i in 0..self.input_size {
-            input_error.push(output_error.iter().zip(self.nodes.iter()).map(|(error, node)| error*node.weights[i]).sum())
-        }
-        let weights_error: Vec<f64> = output_error.iter().zip(self.last_input.iter()).map(|(error, input)| error*input).collect();
-        for i in 0..self.size {
-            self.nodes[i].bias -= output_error[i] * learning_rate;
-            for j in 0..self.input_size {
-                self.nodes[i].weights[j] += weights_error[i] * learning_rate;
-            }
-        }
-        input_error
+    fn forward(&mut self, inputs: &Matrix) -> Matrix {
+        self.last_input = inputs.clone();
+        Matrix::mul(inputs, &self.weights).unwrap().add_matrix(&self.biases).unwrap().clone()
     }
-    fn get_last_input(&self) -> &Vec<f64> {
+    fn backwards(&mut self, output_error: &Matrix, learning_rate: f64) -> Matrix {
+        let input_error = Matrix::mul(output_error, &self.weights.transpose());
+        let weights_error = Matrix::mul(&self.last_input.transpose(), output_error);
+        self.weights.sub_matrix(weights_error.unwrap().mul_scalar(learning_rate));
+        self.biases.sub_matrix(output_error.clone().mul_scalar(learning_rate));
+        input_error.unwrap()
+    }
+    fn get_last_input(&self) -> &Matrix {
         &self.last_input
     }
 }
 
 pub struct ActivationLayer {
     activation_function: Box<dyn ActivationFunction>,
-    last_input: Vec<f64>
+    last_input: Matrix
 }
 
 impl ActivationLayer {
     pub fn new(activation_function: Box<dyn ActivationFunction>) -> ActivationLayer {
-        ActivationLayer {activation_function, last_input: Vec::new()}
+        ActivationLayer {activation_function, last_input: Matrix::new(0, 0)}
     }
 }
 
 impl Layer for ActivationLayer {
-    fn forward(&mut self, inputs: &Vec<f64>) -> Vec<f64> {
+    fn forward(&mut self, inputs: &Matrix) -> Matrix {
         self.last_input = inputs.clone();
         self.activation_function.as_ref().forward(inputs)
     }
-    fn backwards(&mut self, output_error: &Vec<f64>, learning_rate: f64) -> Vec<f64> {
-        output_error.iter().zip(self.get_last_input().iter())
-            .map(|(error, input)| self.activation_function.as_ref().derivative(*input)*error).collect()
+    fn backwards(&mut self, output_error: &Matrix, learning_rate: f64) -> Matrix {
+        self.activation_function.as_ref().backwards(&self.last_input).elementwise_mul(output_error).unwrap().clone()
     }
-    fn get_last_input(&self) -> &Vec<f64> {
+    fn get_last_input(&self) -> &Matrix {
         &self.last_input
     }
 }
