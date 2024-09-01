@@ -4,7 +4,7 @@ use neural_network::neural_network::NN;
 use neural_network::activation_function::*;
 
 fn main() {
-    let mut nn: NN = NN::new(2, 0.1);
+    let mut nn: NN = NN::new([1, 2], 0.1);
     let layer_sizes = vec![4, 8, 4];
     for i in 1..layer_sizes.len() {
         nn.add(Box::new(DenseLayer::new(layer_sizes[i])));

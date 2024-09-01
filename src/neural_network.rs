@@ -4,7 +4,7 @@ use crate::matrix::Matrix;
 pub struct NN{
     layers: Vec<Box<dyn Layer>>,
     learning_rate: f64,
-    layer_sizes: Vec<usize>
+    layer_sizes: Vec<[usize; 2]>
 }
 
 fn mse(y_true: &Matrix, y_pred: &Matrix) -> f64 {
@@ -18,7 +18,7 @@ fn mse_derivative(y_true: &mut Matrix, y_pred: &Matrix, size: f64) -> Matrix {
 }
 
 impl NN{
-    pub fn new(input_size: usize, learning_rate: f64) -> NN {
+    pub fn new(input_size: [usize; 2], learning_rate: f64) -> NN {
         let layer_sizes = vec![input_size];
         NN {layers: Vec::new(), learning_rate, layer_sizes}
     }

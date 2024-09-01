@@ -30,6 +30,28 @@ pub struct MnistDataset {
     labels: Vec<u8>
 }
 
+impl MnistDataset {
+    pub fn get_num_of_images(&self) -> usize {
+        self.num_of_images
+    }
+
+    pub fn get_num_of_rows(&self) -> usize {
+        self.num_of_rows
+    }
+
+    pub fn get_num_of_cols(&self) -> usize {
+        self.num_of_cols
+    }
+
+    pub fn get_images(&self) -> &Vec<Matrix> {
+        &self.images
+    }
+
+    pub fn get_labels(&self) -> &Vec<u8> {
+        &self.labels
+    }
+}
+
 fn load_dataset(images: &[u8], labels: &[u8]) -> Result<MnistDataset, std::io::Error> {
     let images: Vec<u8> = images.to_vec();
     let labels: Vec<u8> = labels.to_vec();
@@ -42,7 +64,7 @@ fn load_dataset(images: &[u8], labels: &[u8]) -> Result<MnistDataset, std::io::E
     for i in 0..num_of_images {
         let image_start: usize = 16 + i * bytes_per_image;
         let data: Vec<u8> = images[image_start..(image_start+bytes_per_image)].try_into().unwrap();
-        let data: Vec<f64> = data.iter().map(|&x| x as f64).collect();
+        let data: Vec<f64> = data.iter().map(|&x| (x as f64) / 256.0).collect();
         image_data.push(Matrix::from_vec(data, num_of_rows, num_of_cols));
         let label: u8 = labels[8+i];
         label_data.push(label);
