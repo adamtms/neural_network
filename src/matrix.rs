@@ -103,11 +103,11 @@ impl Matrix {
         Ok(self)
     }
 
-    pub fn transpose(&self) -> Matrix {
-        let mut result = Matrix::new(self.cols, self.rows);
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                result.set(j, i, self.get(i, j));
+    pub fn transpose(matrix: &Matrix) -> Matrix {
+        let mut result = Matrix::new(matrix.cols, matrix.rows);
+        for i in 0..matrix.rows {
+            for j in 0..matrix.cols {
+                result.set(j, i, matrix.get(i, j));
             }
         }
         result

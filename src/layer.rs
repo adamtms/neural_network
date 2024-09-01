@@ -53,8 +53,8 @@ impl Layer for DenseLayer {
         Matrix::mul(inputs, &self.weights).unwrap().add_matrix(&self.biases).unwrap().clone()
     }
     fn backwards(&mut self, output_error: &Matrix, learning_rate: f64) -> Matrix {
-        let input_error = Matrix::mul(output_error, &self.weights.transpose());
-        let weights_error = Matrix::mul(&self.last_input.transpose(), output_error);
+        let input_error = Matrix::mul(output_error, &Matrix::transpose(&self.weights));
+        let weights_error = Matrix::mul(&Matrix::transpose(&self.last_input), output_error);
         self.weights.sub_matrix(weights_error.unwrap().mul_scalar(learning_rate));
         self.biases.sub_matrix(output_error.clone().mul_scalar(learning_rate));
         input_error.unwrap()
@@ -88,7 +88,7 @@ impl Layer for ActivationLayer {
         self.activation_function.as_ref().forward(inputs)
     }
     fn backwards(&mut self, output_error: &Matrix, learning_rate: f64) -> Matrix {
-        self.activation_function.as_ref().backwards(&self.last_input).elementwise_mul(output_error).unwrap().clone()
+self.activation_function.as_ref().backwards(&self.last_input).elementwise_mul(output_error).unwrap().clone()
     }
     fn get_last_input(&self) -> &Matrix {
         &self.last_input

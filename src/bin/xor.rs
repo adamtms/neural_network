@@ -5,13 +5,16 @@ use neural_network::activation_function::*;
 
 fn main() {
     let mut nn: NN = NN::new(2, 0.1);
-    let layer_sizes = vec![2,4,1];
+    let layer_sizes = vec![4, 8, 4];
     for i in 1..layer_sizes.len() {
         nn.add(Box::new(DenseLayer::new(layer_sizes[i])));
-        nn.add(Box::new(ActivationLayer::new(Box::new(Sigmoid{}))));
+        nn.add(Box::new(ActivationLayer::new(Box::new(ReLU{}))));
     }
+
+    nn.add(Box::new(DenseLayer::new(2)));
+    nn.add(Box::new(ActivationLayer::new(Box::new(Sigmoid{}))));
     let x_train = vec![vec![0.0, 0.0], vec![0.0, 1.0], vec![1.0, 0.0], vec![1.0, 1.0]];
-    let y_train = vec![vec![0.0], vec![1.0], vec![1.0], vec![0.0]];
+    let y_train = vec![vec![1.0, 0.0], vec![0.0, 1.0], vec![0.0, 1.0], vec![1.0, 0.0]];
     match nn.train(&x_train, &y_train, 10000) {
         Ok(_) => println!("Training complete"),
         Err(e) => println!("Error: {}", e)
