@@ -34,20 +34,22 @@ impl NN{
         }
         outputs
     }
-    pub fn train(&mut self, x_train: &Vec<Vec<f64>>, y_train: &Vec<Vec<f64>>, epochs: u64) -> Result<Vec<f64>, String>{
+    pub fn train(&mut self, x_train: &Vec<Matrix>, y_train: &Vec<Matrix>, epochs: u64) -> Result<Vec<f64>, String>{
         if x_train.len() != y_train.len() {
             return Err("x_train and y_train must have the same length".to_owned());
         }
         let mut errors = Vec::new();
-        let input_size: f64 = f64::try_from(i32::try_from(y_train[0].len()).unwrap()).unwrap();
+        let input_num_cols: f64 = x_train[0].get_num_cols() as f64;
+        let input_num_rows: f64 = x_train[0].get_num_rows() as f64;
+        let input_size: f64 = input_num_cols * input_num_rows;
         for epoch in 0..epochs {
             let mut err = 0.0;
             for i in 0..x_train.len() {
-                let mut outputs = Matrix::from_vec(x_train[i].clone(), 1, x_train[i].len());
+                let mut outputs = x_train[i].clone();
                 for layer in self.layers.iter_mut() {
                     outputs = layer.forward(&outputs);
                 }
-                let mut y_true = Matrix::from_vec(y_train[i].clone(), 1, y_train[i].len());
+                let mut y_true = y_train[i].clone();
                 err += mse(&outputs, &y_true);
 
                 let mut error = mse_derivative(&mut y_true, &outputs, input_size);

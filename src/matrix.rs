@@ -11,6 +11,14 @@ impl Matrix {
         Matrix {rows, cols, data: vec![0.0; rows*cols]}
     }
 
+    pub fn get_num_rows(&self) -> usize {
+        self.rows
+    }
+
+    pub fn get_num_cols(&self) -> usize {
+        self.cols
+    }
+
     pub fn new_random(rows: usize, cols: usize) -> Matrix {
         let mut rng = rand::thread_rng();
         let data  = (0..rows*cols).map(|_| rng.gen::<f64>() * 2.0 - 1.0).collect();
