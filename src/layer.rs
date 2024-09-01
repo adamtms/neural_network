@@ -4,7 +4,7 @@ use crate::activation_function::ActivationFunction;
 pub trait Layer {
     fn forward(&mut self, inputs: &Matrix) -> Matrix;
     fn backwards(&mut self, output_error: &Matrix, learning_rate: f64) -> Matrix;
-    fn initialize(&mut self, input_size: usize) {}
+    fn initialize(&mut self, _input_size: usize) {}
     fn get_last_input(&self) -> &Matrix;
     fn get_size(&self) -> usize;
 }
@@ -52,11 +52,12 @@ impl Layer for DenseLayer {
         self.last_input = inputs.clone();
         Matrix::mul(inputs, &self.weights).unwrap().add_matrix(&self.biases).unwrap().clone()
     }
+
     fn backwards(&mut self, output_error: &Matrix, learning_rate: f64) -> Matrix {
         let input_error = Matrix::mul(output_error, &Matrix::transpose(&self.weights));
         let weights_error = Matrix::mul(&Matrix::transpose(&self.last_input), output_error);
-        self.weights.sub_matrix(weights_error.unwrap().mul_scalar(learning_rate));
-        self.biases.sub_matrix(output_error.clone().mul_scalar(learning_rate));
+        let _ = self.weights.sub_matrix(weights_error.unwrap().mul_scalar(learning_rate));
+        let _ = self.biases.sub_matrix(output_error.clone().mul_scalar(learning_rate));
         input_error.unwrap()
     }
     fn get_last_input(&self) -> &Matrix {
@@ -87,8 +88,8 @@ impl Layer for ActivationLayer {
         self.last_input = inputs.clone();
         self.activation_function.as_ref().forward(inputs)
     }
-    fn backwards(&mut self, output_error: &Matrix, learning_rate: f64) -> Matrix {
-self.activation_function.as_ref().backwards(&self.last_input).elementwise_mul(output_error).unwrap().clone()
+    fn backwards(&mut self, output_error: &Matrix, _learning_rate: f64) -> Matrix {
+        self.activation_function.as_ref().backwards(&self.last_input).elementwise_mul(output_error).unwrap().clone()
     }
     fn get_last_input(&self) -> &Matrix {
         &self.last_input

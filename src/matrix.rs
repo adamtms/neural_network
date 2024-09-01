@@ -18,6 +18,9 @@ impl Matrix {
     }
 
     pub fn from_vec(data: Vec<f64>, rows: usize, cols: usize) -> Matrix {
+        if data.len() != rows*cols {
+            panic!("Data length must match matrix dimensions");
+        }
         Matrix {rows, cols, data}
     }
 
