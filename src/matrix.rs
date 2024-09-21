@@ -11,6 +11,13 @@ impl Matrix {
         Matrix {rows, cols, data: vec![0.0; rows*cols]}
     }
 
+    pub fn equals(&self, other: &Matrix) -> bool {
+        if self.rows != other.rows || self.cols != other.cols {
+            return false;
+        }
+        self.data.iter().zip(other.data.iter()).all(|(a, b)| a == b)
+    }
+
     pub fn get_num_rows(&self) -> usize {
         self.rows
     }
@@ -138,7 +145,68 @@ impl Matrix {
         Ok(result)
     }
 
+    pub fn convolute(matrix: &Matrix, kernel: &Matrix, stride: usize, padding: usize) -> Matrix {
+        let mut result = Matrix::new((matrix.rows + 2*padding as usize - kernel.rows)/stride as usize + 1,
+                                     (matrix.cols + 2*padding as usize - kernel.cols)/stride as usize + 1);
+        for i_result in 0..result.rows {
+            for j_result in 0..result.cols {
+                let mut sum = 0.0;
+                // doesnt include padding
+                let i_start = i_result*stride;
+                let j_start = j_result*stride;
+                for i_kernel in 0..kernel.rows {
+                    for j_kernel in 0..kernel.cols {
+                        if i_start + i_kernel < padding || j_start + j_kernel < padding {
+                            continue;
+                        }
+                        // now it includes padding
+                        let i_matrix = i_start + i_kernel - padding;
+                        let j_matrix = j_start + j_kernel - padding;
+                        if i_matrix >= matrix.rows || j_matrix >= matrix.cols {
+                            continue;
+                        }
+                        sum += matrix.get(i_matrix, j_matrix) * kernel.get(i_kernel, j_kernel);
+                    }
+                }
+                result.set(i_result, j_result, sum);
+            }
+        }
+        result
+    }
+
     pub fn clone(&self) -> Matrix {
         Matrix::from_vec(self.data.clone(), self.rows, self.cols)
+    }
+}
+
+#[cfg(test)]
+mod test_convolutions {
+    use super::*;
+
+    #[test]
+    fn test_basic() {
+        let matrix = Matrix::from_vec((1..10).map(|i| i as f64).collect(), 3, 3);
+        let kernel = Matrix::from_vec((10..14).map(|i| i as f64).collect(), 2, 2);
+        let result = Matrix::convolute(&matrix, &kernel, 1, 0);
+        let expected = Matrix::from_vec(vec![145.0, 191.0, 283.0, 329.0], 2, 2);
+        assert!(result.equals(&expected));
+    }
+
+    #[test]
+    fn test_padding() {
+        let matrix = Matrix::from_vec(vec![5.0, 4.0, 1.0, 2.0, 3.0, 4.0], 2, 3);
+        let kernel = Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
+        let result = Matrix::convolute(&matrix, &kernel, 1, 1);
+        let expected = Matrix::from_vec(vec![20.0, 31.0, 16.0, 3.0, 18.0, 31.0, 31.0, 13.0, 4.0, 8.0, 11.0, 4.0], 3, 4);
+        assert!(result.equals(&expected));
+    }
+
+    #[test]
+    fn test_stride() {
+        let matrix = Matrix::from_vec((0..16).map(|i| i as f64).collect(), 4, 4);
+        let kernel = Matrix::from_vec((0..4).map(|i| i as f64).collect(), 2, 2);
+        let result = Matrix::convolute(&matrix, &kernel, 2, 0);
+        let expected = Matrix::from_vec(vec![24.0, 36.0, 72.0, 84.0], 2, 2);
+        assert!(result.equals(&expected));
     }
 }
