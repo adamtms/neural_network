@@ -71,6 +71,37 @@ impl Layer for DenseLayer {
     }
 }
 
+pub struct ConvolutionalLayer {
+    kernel: Matrix,
+    stride: usize,
+    padding: usize,
+    output_size: [usize; 2],
+    last_input: Matrix
+}
+
+impl ConvolutionalLayer {
+    pub fn new(kernel: Matrix, stride: usize, padding: usize) -> ConvolutionalLayer {
+        ConvolutionalLayer {kernel, stride, padding, output_size: [0, 0], last_input: Matrix::new(0, 0)}
+    }
+}
+
+impl Layer for ConvolutionalLayer {
+    fn initialize(&mut self, _: [usize; 2]) {}
+    fn forward(&mut self, inputs: &Matrix) -> Matrix {
+        self.last_input = inputs.clone();
+        Matrix::convolve(inputs, &self.kernel, self.stride, self.padding)
+    }
+    fn backwards(&mut self, output_error: &Matrix, learning_rate: f64) -> Matrix {
+        Matrix::new(0, 0)
+    }
+    fn get_last_input(&self) -> &Matrix {
+        &self.last_input
+    }
+    fn get_size(&self) -> [usize; 2] {
+        self.output_size
+    }
+}
+
 pub struct ActivationLayer {
     activation_function: Box<dyn ActivationFunction>,
     last_input: Matrix,
