@@ -39,6 +39,22 @@ impl Matrix {
         Matrix {rows, cols, data}
     }
 
+    pub fn from_nested_vec(data: Vec<Vec<f64>>) -> Result<Matrix, String> {
+        let rows = data.len();
+        if rows == 0 {
+            return Err("Matrix cannot have 0 rows".to_string());
+        }
+        let mut values = Vec::new();
+        let cols = data[0].len();
+        for column in data.iter() {
+            if column.len() != cols {
+                return Err("All columns must have the same length".to_string());
+            }
+            values.extend(column.iter());
+        }
+        Ok(Matrix{rows, cols, data: values})
+    }
+
     pub fn get(&self, row: usize, col: usize) -> f64 {
         self.data[row*self.cols + col]
     }
@@ -174,31 +190,6 @@ impl Matrix {
         result
     }
 
-
-    pub fn deconvolve(matrix: &Matrix, kernel: &Matrix, stride: usize, padding: usize) -> Matrix {
-        let mut result = Matrix::new((matrix.rows - 1)*stride + kernel.rows - 2*padding,
-                                     (matrix.cols - 1)*stride + kernel.cols - 2*padding);
-        for i_matrix in 0..matrix.rows {
-            for j_matrix in 0..matrix.cols {
-                for i_kernel in 0..kernel.rows {
-                    for j_kernel in 0..kernel.cols {
-                        let i_result = i_matrix*stride + i_kernel;
-                        let j_result = j_matrix*stride + j_kernel;
-                        if i_result < padding || j_result < padding {
-                            continue;
-                        }
-                        if i_result >= result.rows - padding || j_result >= result.cols - padding {
-                            continue;
-                        }
-                        let value = matrix.get(i_matrix, j_matrix) * kernel.get(i_kernel, j_kernel);
-                        result.set(i_result - padding, j_result - padding, value);
-                    }
-                }
-            }
-        }
-        result
-    }
-
     pub fn clone(&self) -> Matrix {
         Matrix::from_vec(self.data.clone(), self.rows, self.cols)
     }
@@ -232,39 +223,6 @@ mod test_convolutions {
         let kernel = Matrix::from_vec((0..4).map(|i| i as f64).collect(), 2, 2);
         let result = Matrix::convolve(&matrix, &kernel, 2, 0);
         let expected = Matrix::from_vec(vec![24.0, 36.0, 72.0, 84.0], 2, 2);
-        assert!(result.equals(&expected));
-    }
-}
-
-
-#[cfg(test)]
-mod test_deconvolutions {
-    use super::*;
-
-    #[test]
-    fn test_basic() {
-        let matrix = Matrix::from_vec(vec![145.0, 191.0, 283.0, 329.0], 2, 2);
-        let kernel = Matrix::from_vec((10..14).map(|i| i as f64).collect(), 2, 2);
-        let result = Matrix::deconvolve(&matrix, &kernel, 1, 0);
-        let expected = Matrix::from_vec((1..10).map(|i| i as f64).collect(), 3, 3);
-        assert!(result.equals(&expected));
-    }
-
-    #[test]
-    fn test_padding() {
-        let matrix = Matrix::from_vec(vec![20.0, 31.0, 16.0, 3.0, 18.0, 31.0, 31.0, 13.0, 4.0, 8.0, 11.0, 4.0], 3, 4);
-        let kernel = Matrix::from_vec(vec![1.0, 2.0, 3.0, 4.0], 2, 2);
-        let result = Matrix::deconvolve(&matrix, &kernel, 1, 1);
-        let expected = Matrix::from_vec(vec![5.0, 4.0, 1.0, 2.0, 3.0, 4.0], 2, 3);
-        assert!(result.equals(&expected));
-    }
-
-    #[test]
-    fn test_stride() {
-        let matrix = Matrix::from_vec(vec![24.0, 36.0, 72.0, 84.0], 2, 2);
-        let kernel = Matrix::from_vec((0..4).map(|i| i as f64).collect(), 2, 2);
-        let result = Matrix::deconvolve(&matrix, &kernel, 2, 0);
-        let expected = Matrix::from_vec((0..16).map(|i| i as f64).collect(), 4, 4);
         assert!(result.equals(&expected));
     }
 }
