@@ -4,7 +4,6 @@ use crate::activation_function::ActivationFunction;
 
 pub struct ActivationLayer {
     activation_function: Box<dyn ActivationFunction>,
-    last_input: Matrix,
     size: [usize; 2]
 }
 
@@ -24,9 +23,6 @@ impl Layer for ActivationLayer {
     }
     fn backwards(&mut self, output_error: &Matrix, _learning_rate: f64) -> Matrix {
         self.activation_function.as_ref().backwards(&self.last_input).elementwise_mul(output_error).unwrap().clone()
-    }
-    fn get_last_input(&self) -> &Matrix {
-        &self.last_input
     }
     fn get_size(&self) -> [usize; 2] {
         self.size

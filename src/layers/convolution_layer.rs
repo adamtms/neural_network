@@ -84,9 +84,6 @@ impl Layer for ConvolutionalLayer {
             }
         input_error
     }
-    fn get_last_input(&self) -> &Matrix {
-        &self.last_input
-    }
     fn get_size(&self) -> [usize; 2] {
         self.output_size
     }

@@ -37,9 +37,6 @@ impl Layer for DenseLayer {
         let _ = self.biases.sub_matrix(output_error.clone().mul_scalar(learning_rate));
         input_error.unwrap()
     }
-    fn get_last_input(&self) -> &Matrix {
-        &self.last_input
-    }
     fn get_size(&self) -> [usize; 2] {
         self.size
     }
