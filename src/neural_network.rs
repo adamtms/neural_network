@@ -1,4 +1,4 @@
-use crate::layer::Layer;
+use crate::layers::layer_interface::Layer;
 use crate::matrix::Matrix;
 
 pub struct NN{

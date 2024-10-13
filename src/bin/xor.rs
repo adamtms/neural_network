@@ -1,4 +1,4 @@
-use neural_network::layer::*;
+use neural_network::layers::{dense_layer::DenseLayer, activation_layer::ActivationLayer};
 use neural_network::matrix::Matrix;
 use neural_network::neural_network::NN;
 use neural_network::activation_function::*;
