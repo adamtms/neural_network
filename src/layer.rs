@@ -1,5 +1,3 @@
-use std::ops::{Deref, DerefMut};
-
 use crate::matrix::Matrix;
 use crate::activation_function::ActivationFunction;
 
@@ -104,6 +102,29 @@ impl ConvolutionalLayer {
         result.iter_mut().for_each(|x| *x = (*x)*learning_rate);
         Matrix::from_vec(result, self.kernel.get_num_rows(), self.kernel.get_num_cols())
     }
+    fn get_input_error(&self, output_error: &Matrix) -> Matrix {
+        let mut result: Matrix = Matrix::new(self.last_input.get_num_rows(), self.last_input.get_num_cols());
+        for i in 0..output_error.get_num_rows() {
+            for j in 0..output_error.get_num_cols() {
+                for k in 0..self.kernel.get_num_rows() {
+                    for l in 0..self.kernel.get_num_cols() {
+                        let mut final_k = i * self.stride + k;
+                        if final_k < self.padding || final_k >= self.last_input.get_num_rows() {
+                            continue;
+                        }
+                        final_k -= self.padding;
+                        let mut final_l = j * self.stride + l;
+                        if final_l < self.padding || final_l >= self.last_input.get_num_cols() {
+                            continue;
+                        }
+                        final_l -= self.padding;
+                        result.set(final_k, final_l, result.get(final_k, final_l) + self.kernel.get(k, l) * output_error.get(i, j));
+                    }
+                }
+            }
+        }
+        result
+    }
 }
 
 impl Layer for ConvolutionalLayer {
@@ -118,12 +139,13 @@ impl Layer for ConvolutionalLayer {
     }
     fn backwards(&mut self, output_error: &Matrix, learning_rate: f64) -> Matrix {
         let weight_error = self.get_weight_error(output_error, learning_rate);
+        let input_error = self.get_input_error(output_error);
         let result = self.kernel.sub_matrix(&weight_error);
         match result {
                 Ok(_) => (),
                 Err(_) => panic!("Error in ConvolutionalLayer implementation of get_weight_error")
             }
-        Matrix::new(0, 0)
+        input_error
     }
     fn get_size(&self) -> [usize; 2] {
         self.output_size
