@@ -4,6 +4,7 @@ use crate::activation_function::ActivationFunction;
 
 pub struct ActivationLayer {
     activation_function: Box<dyn ActivationFunction>,
+    last_input: Matrix,
     size: [usize; 2]
 }
 
